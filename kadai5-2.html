@@ -1,20 +1,47 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="utf-8">
     <title>演習課題5-2：外部APIの呼び出しテスト</title>
 </head>
 <body>
-    <h1 id="msg">何かのAPI</h1>
-    <form name="apiform"><p>
-        何かのフォーム：<input type="text" name="form_data">
-        <button type="button" id="btn1" onclick="some_api(this.form)">実行</button>
-    </p></form>
-    
+    <h1 id="msg">Wikipedia ページ情報取得</h1>
+    <form name="apiform">
+        <p>
+            Wikipediaのサブパス：
+            <input type="text" name="endpoint" placeholder="Main_Page">
+            <button type="button" onclick="some_api(this.form)">取得</button>
+        </p>
+    </form>
+
     <div id="result"></div>
+
     <script>
         async function some_api(myForm) {
-            // ここにコードを書く
-            document.getElementById("result").innerHTML += myForm.form_data.value+"<br />";
+            const rel = myForm.endpoint.value.trim();
+            if (!rel) {
+                document.getElementById("result").innerHTML = "サブパスを入力してください。";
+                return;
+            }
+
+            const endpoint = encodeURIComponent(rel);
+            const apiUrl = `https://ja.wikipedia.org/api/rest_v1/page/summary/${endpoint}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("APIリクエスト失敗");
+
+                const data = await response.json();
+
+                const title = data.title || "(タイトル取得失敗)";
+                const url = data.content_urls?.desktop?.page || `https://ja.wikipedia.org/wiki/${endpoint}`;
+
+                document.getElementById("result").innerHTML =
+                    `<strong>URL:</strong> <a href="${url}" target="_blank">${url}</a><br><strong>タイトル:</strong> ${title}<br>;`
+            } catch (e) {
+                document.getElementById("result").innerHTML = `取得エラー：${e.message}`;
+            }
+
             document.apiform.reset();
         }
     </script>
